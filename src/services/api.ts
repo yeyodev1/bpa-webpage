@@ -20,6 +20,12 @@ export async function sendLead(input: LeadInput) {
   await http.post('/leads', { ...input, source: 'web' })
 }
 
+// Sin respuesta o error del servidor (no un dato mal escrito por la persona).
+export function isServiceDown(error: unknown) {
+  if (!axios.isAxiosError(error)) return true
+  return !error.response || error.response.status >= 500
+}
+
 export function errorMessage(error: unknown) {
   if (axios.isAxiosError(error)) return error.response?.data?.message || 'No pudimos enviar tu solicitud. Intenta de nuevo.'
   return 'Ocurrió un error inesperado.'

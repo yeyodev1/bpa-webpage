@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { contact, interests } from '@/data/content'
-import { errorMessage, sendLead, type LeadInput } from '@/services/api'
+import { errorMessage, isServiceDown, sendLead, type LeadInput } from '@/services/api'
 
 const form = reactive<LeadInput>({
   name: '',
@@ -16,6 +16,7 @@ const form = reactive<LeadInput>({
 const sending = ref(false)
 const sent = ref(false)
 const error = ref('')
+const offline = ref(false)
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -42,7 +43,9 @@ async function submit() {
     await sendLead(form)
     sent.value = true
   } catch (err) {
-    error.value = errorMessage(err)
+    // Si el servidor no responde, la reserva sigue por WhatsApp en vez de mostrar un error.
+    if (isServiceDown(err)) offline.value = true
+    else error.value = errorMessage(err)
   } finally {
     sending.value = false
   }
@@ -72,6 +75,15 @@ async function submit() {
           <p>Te escribiremos muy pronto. Si prefieres, adelanta la conversación por WhatsApp.</p>
           <a :href="whatsappUrl" target="_blank" rel="noopener" class="btn btn-accent">
             <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Escribir por WhatsApp
+          </a>
+        </div>
+
+        <div v-else-if="offline" class="done" role="status">
+          <span class="ok"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i></span>
+          <h3>Confirma tu asesoría por WhatsApp</h3>
+          <p>Ya preparamos el mensaje con tus datos. Envíalo y te respondemos en horario laboral.</p>
+          <a :href="whatsappUrl" target="_blank" rel="noopener" class="btn btn-accent">
+            <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Enviar por WhatsApp
           </a>
         </div>
 
